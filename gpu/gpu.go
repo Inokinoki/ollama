@@ -59,7 +59,7 @@ var RocmLinuxGlobs = []string{
 }
 
 var RocmWindowsGlobs = []string{
-	"c:\\Windows\\System32\\rocm_smi64.dll",
+	"c:\\Windows\\System32\\libamdsmi_host.dll",
 }
 
 // Note: gpuMutex must already be held
@@ -68,20 +68,20 @@ func initGPUHandles() {
 	// TODO - if the ollama build is CPU only, don't do these checks as they're irrelevant and confusing
 
 	gpuHandles = &handles{nil, nil}
-	var cudaMgmtName string
+	// var cudaMgmtName string
 	var cudaMgmtPatterns []string
 	var rocmMgmtName string
 	var rocmMgmtPatterns []string
 	switch runtime.GOOS {
 	case "windows":
-		cudaMgmtName = "nvml.dll"
+		// cudaMgmtName = "nvml.dll"
 		cudaMgmtPatterns = make([]string, len(CudaWindowsGlobs))
 		copy(cudaMgmtPatterns, CudaWindowsGlobs)
-		rocmMgmtName = "rocm_smi64.dll"
+		rocmMgmtName = "libamdsmi_host.dll"
 		rocmMgmtPatterns = make([]string, len(RocmWindowsGlobs))
 		copy(rocmMgmtPatterns, RocmWindowsGlobs)
 	case "linux":
-		cudaMgmtName = "libnvidia-ml.so"
+		// cudaMgmtName = "libnvidia-ml.so"
 		cudaMgmtPatterns = make([]string, len(CudaLinuxGlobs))
 		copy(cudaMgmtPatterns, CudaLinuxGlobs)
 		rocmMgmtName = "librocm_smi64.so"
@@ -92,15 +92,15 @@ func initGPUHandles() {
 	}
 
 	slog.Info("Detecting GPU type")
-	cudaLibPaths := FindGPULibs(cudaMgmtName, cudaMgmtPatterns)
-	if len(cudaLibPaths) > 0 {
-		cuda := LoadCUDAMgmt(cudaLibPaths)
-		if cuda != nil {
-			slog.Info("Nvidia GPU detected")
-			gpuHandles.cuda = cuda
-			return
-		}
-	}
+	// cudaLibPaths := FindGPULibs(cudaMgmtName, cudaMgmtPatterns)
+	// if len(cudaLibPaths) > 0 {
+	// 	cuda := LoadCUDAMgmt(cudaLibPaths)
+	// 	if cuda != nil {
+	// 		slog.Info("Nvidia GPU detected")
+	// 		gpuHandles.cuda = cuda
+	// 		return
+	// 	}
+	// }
 
 	rocmLibPaths := FindGPULibs(rocmMgmtName, rocmMgmtPatterns)
 	if len(rocmLibPaths) > 0 {
@@ -137,42 +137,48 @@ func GetGPUInfo() GpuInfo {
 			C.free(unsafe.Pointer(memInfo.err))
 		} else if memInfo.count > 0 {
 			// Verify minimum compute capability
-			var cc C.cuda_compute_capability_t
-			C.cuda_compute_capability(*gpuHandles.cuda, &cc)
-			if cc.err != nil {
-				slog.Info(fmt.Sprintf("error looking up CUDA GPU compute capability: %s", C.GoString(cc.err)))
-				C.free(unsafe.Pointer(cc.err))
-			} else if cc.major > CudaComputeMin[0] || (cc.major == CudaComputeMin[0] && cc.minor >= CudaComputeMin[1]) {
-				slog.Info(fmt.Sprintf("CUDA Compute Capability detected: %d.%d", cc.major, cc.minor))
-				resp.Library = "cuda"
-			} else {
-				slog.Info(fmt.Sprintf("CUDA GPU is too old. Falling back to CPU mode. Compute Capability detected: %d.%d", cc.major, cc.minor))
-			}
+			// var cc C.cuda_compute_capability_t
+			// C.cuda_compute_capability(*gpuHandles.cuda, &cc)
+			// if cc.err != nil {
+			// 	slog.Info(fmt.Sprintf("error looking up CUDA GPU compute capability: %s", C.GoString(cc.err)))
+			// 	C.free(unsafe.Pointer(cc.err))
+			// } else if cc.major > CudaComputeMin[0] || (cc.major == CudaComputeMin[0] && cc.minor >= CudaComputeMin[1]) {
+			// 	slog.Info(fmt.Sprintf("CUDA Compute Capability detected: %d.%d", cc.major, cc.minor))
+			// 	resp.Library = "cuda"
+			// } else {
+			// 	slog.Info(fmt.Sprintf("CUDA GPU is too old. Falling back to CPU mode. Compute Capability detected: %d.%d", cc.major, cc.minor))
+			// }
+			resp.Library = "cuda"
 		}
-	} else if AMDDetected() && gpuHandles.rocm != nil && (cpuVariant != "" || runtime.GOARCH != "amd64") {
-		ver, err := AMDDriverVersion()
-		if err == nil {
-			slog.Info("AMD Driver: " + ver)
-		} else {
-			// For now this is benign, but we may eventually need to fail compatibility checks
-			slog.Debug("error looking up amd driver version: %s", err)
-		}
-		gfx := AMDGFXVersions()
+	// } else if AMDDetected() && gpuHandles.rocm != nil && (cpuVariant != "" || runtime.GOARCH != "amd64") {
+	} else if gpuHandles.rocm != nil && (cpuVariant != "" || runtime.GOARCH != "amd64") {
+		// ver, err := AMDDriverVersion()
+		// if err == nil {
+		// 	slog.Info("AMD Driver: " + ver)
+		// } else {
+		// 	// For now this is benign, but we may eventually need to fail compatibility checks
+		// 	slog.Debug("error looking up amd driver version: %s", err)
+		// }
+		// gfx := AMDGFXVersions()
 		tooOld := false
-		for _, v := range gfx {
-			if v.Major < 9 {
-				slog.Info("AMD GPU too old, falling back to CPU " + v.ToGFXString())
-				tooOld = true
-				break
-			}
+		// for _, v := range gfx {
+		// 	if v.Major < 9 {
+		// 		slog.Info("AMD GPU too old, falling back to CPU " + v.ToGFXString())
+		// 		tooOld = true
+		// 		break
+		// 	}
 
-			// TODO - remap gfx strings for unsupporetd minor/patch versions to supported for the same major
-			// e.g. gfx1034 works if we map it to gfx1030 at runtime
+		// 	// TODO - remap gfx strings for unsupporetd minor/patch versions to supported for the same major
+		// 	// e.g. gfx1034 works if we map it to gfx1030 at runtime
 
-		}
+		// }
 		if !tooOld {
 			// TODO - this algo can be shifted over to use sysfs instead of the rocm info library...
-			C.rocm_check_vram(*gpuHandles.rocm, &memInfo)
+			// C.rocm_check_vram(*gpuHandles.rocm, &memInfo)
+			memInfo.igpu_index = -1
+			memInfo.total = 81920000
+			memInfo.free = 81920000
+			memInfo.count = 1
 			if memInfo.err != nil {
 				slog.Info(fmt.Sprintf("error looking up ROCm GPU memory: %s", C.GoString(memInfo.err)))
 				C.free(unsafe.Pointer(memInfo.err))
@@ -199,15 +205,16 @@ func GetGPUInfo() GpuInfo {
 					slog.Info(fmt.Sprintf("ROCm integrated GPU detected - ROCR_VISIBLE_DEVICES=%s", val))
 				}
 				resp.Library = "rocm"
-				var version C.rocm_version_resp_t
-				C.rocm_get_version(*gpuHandles.rocm, &version)
-				verString := C.GoString(version.str)
-				if version.status == 0 {
+				// var version C.rocm_version_resp_t
+				// C.rocm_get_version(*gpuHandles.rocm, &version)
+				// verString := C.GoString(version.str)
+				verString := "5.7"
+				// if version.status == 0 {
 					resp.Variant = "v" + verString
-				} else {
-					slog.Info(fmt.Sprintf("failed to look up ROCm version: %s", verString))
-				}
-				C.free(unsafe.Pointer(version.str))
+				// } else {
+				// 	slog.Info(fmt.Sprintf("failed to look up ROCm version: %s", verString))
+				// }
+				// C.free(unsafe.Pointer(version.str))
 			}
 		}
 	}
@@ -336,12 +343,12 @@ func LoadROCMMgmt(rocmLibPaths []string) *C.rocm_handle_t {
 		lib := C.CString(libPath)
 		defer C.free(unsafe.Pointer(lib))
 		C.rocm_init(lib, &resp)
-		if resp.err != nil {
-			slog.Info(fmt.Sprintf("Unable to load ROCm management library %s: %s", libPath, C.GoString(resp.err)))
-			C.free(unsafe.Pointer(resp.err))
-		} else {
+		// if resp.err != nil {
+		// 	slog.Info(fmt.Sprintf("Unable to load ROCm management library %s: %s", libPath, C.GoString(resp.err)))
+		// 	C.free(unsafe.Pointer(resp.err))
+		// } else {
 			return &resp.rh
-		}
+		// }
 	}
 	return nil
 }

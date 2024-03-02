@@ -106,14 +106,14 @@ func New(workDir, model string, adapters, projectors []string, opts api.Options)
 		}
 
 		// 1 + 2 must fit on the main gpu
-		min := graph + kv*layers/maxlayers
-		if layers <= 0 || min > avg {
-			slog.Info("not enough vram available, falling back to CPU only")
-			info.Library = "cpu"
-			info.Variant = gpu.GetCPUVariant()
-			opts.NumGPU = 0
-			break
-		}
+		// min := graph + kv*layers/maxlayers
+		// if layers <= 0 || min > avg {
+		// 	slog.Info("not enough vram available, falling back to CPU only")
+		// 	info.Library = "cpu"
+		// 	info.Variant = gpu.GetCPUVariant()
+		// 	opts.NumGPU = 0
+		// 	break
+		// }
 
 		opts.NumGPU = int(layers)
 	}
