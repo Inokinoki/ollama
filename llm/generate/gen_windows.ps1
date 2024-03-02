@@ -25,6 +25,16 @@ function init_vars {
     } else {
         $script:CUDA_LIB_DIR=$env:CUDA_LIB_DIR
     }
+    # Try to find the ROCm dir
+    if ($env:ROCM_LIB_DIR -eq $null) {
+        $d=(get-command -ea 'silentlycontinue' hipcc.bin).path
+        if ($d -ne $null) {
+            $script:ROCM_LIB_DIR=($d| split-path -parent)
+            $script:ROCM_INCLUDE_DIR=($script:ROCM_LIB_DIR|split-path -parent)+"\include"
+        }
+    } else {
+        $script:ROCM_LIB_DIR=$env:ROCM_LIB_DIR
+    }
     $script:GZIP=(get-command -ea 'silentlycontinue' gzip).path
     $script:DUMPBIN=(get-command -ea 'silentlycontinue' dumpbin).path
     if ($null -eq $env:CMAKE_CUDA_ARCHITECTURES) {
@@ -199,7 +209,15 @@ if ($null -ne $script:CUDA_LIB_DIR) {
     compress_libs
 }
 # TODO - actually implement ROCm support on windows
-$script:buildDir="${script:llamacppDir}/build/windows/${script:ARCH}/rocm"
+if ($null -ne $script:ROCM_LIB_DIR) {
+    init_vars
+    $script:buildDir="${script:llamacppDir}/build/windows/${script:ARCH}/rocm_5.7"
+    $script:cmakeDefs += @("-DLLAMA_HIPBLAS=ON", "-DCMAKE_C_COMPILER=clang", "-DCMAKE_CXX_COMPILER=clang++", "-DAMDGPU_TARGETS=gfx1030")
+    build
+    install
+    sign
+    compress_libs
+}
 
 rm -ea 0 -recurse -force -path "${script:buildDir}/lib"
 md "${script:buildDir}/lib" -ea 0 > $null
