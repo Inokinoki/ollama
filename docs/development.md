@@ -150,6 +150,7 @@ Use personalized cmake command:
 cmake ..\..\ -G "Ninja" -DAMDGPU_TARGETS=<your-gpu-target> -DLLAMA_HIPBLAS=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DLLAMA_STATIC=OFF -DLLAMA_NATIVE=off -DBUILD_SHARED_LIBS=on
 ```
 
+See: https://github.com/ggerganov/llama.cpp/issues/2843#issuecomment-1935014310
 TODO: Do not use ninja
 
 Make sure to add ROCm path (including `hipblas.dll` and `rocblas.dll`) to your PATH.
