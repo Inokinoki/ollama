@@ -136,3 +136,20 @@ go build .
 In addition to the common Windows development tools described above, install:
 
 - [NVIDIA CUDA](https://docs.nvidia.com/cuda/cuda-installation-guide-microsoft-windows/index.html)
+
+#### Windows ROCm (AMD)
+
+In addition to the common Windows development tools described above, install:
+
+- [AMD ROCm](https://docs.amd.com/en/docs-5.7.1/deploy/windows/index.html)
+- [perl on Windows](https://strawberryperl.com/)
+
+Use personalized cmake command:
+
+```
+cmake ..\..\ -G "Ninja" -DAMDGPU_TARGETS=<your-gpu-target> -DLLAMA_HIPBLAS=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DLLAMA_STATIC=OFF -DLLAMA_NATIVE=off -DBUILD_SHARED_LIBS=on
+```
+
+TODO: Do not use ninja
+
+Make sure to add ROCm path (including `hipblas.dll` and `rocblas.dll`) to your PATH.
