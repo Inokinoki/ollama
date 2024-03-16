@@ -65,7 +65,10 @@ func New(model string, adapters, projectors []string, opts api.Options) (LLM, er
 		opts.NumGPU = 0
 	}
 
-	info := gpu.GetGPUInfo()
+	if len(opts.VariantGPU) == 0 {
+		opts.VariantGPU = "default"
+	}
+	info := gpu.GetGPUInfoWithVariant(opts.VariantGPU)
 	switch runtime.GOOS {
 	case "darwin":
 		if opts.NumGPU == 0 {

@@ -36,6 +36,10 @@ func CheckVRAM() (int64, error) {
 	return recommendedMaxVRAM, nil
 }
 
+func GetGPUInfoWithVariant(variantGPU string) GpuInfo {
+	return GetGPUInfo()
+}
+
 func GetGPUInfo() GpuInfo {
 	mem, _ := getCPUMem()
 	if runtime.GOARCH == "amd64" {

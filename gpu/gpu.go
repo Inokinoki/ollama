@@ -87,6 +87,10 @@ func initGPUHandles() {
 }
 
 func GetGPUInfo() GpuInfo {
+	return GetGPUInfoWithVariant("default")
+}
+
+func GetGPUInfoWithVariant(variantGPU string) GpuInfo {
 	// TODO - consider exploring lspci (and equivalent on windows) to check for
 	// GPUs so we can report warnings if we see Nvidia/AMD but fail to load the libraries
 	gpuMutex.Lock()
@@ -103,7 +107,7 @@ func GetGPUInfo() GpuInfo {
 
 	var memInfo C.mem_info_t
 	resp := GpuInfo{}
-	if gpuHandles.cuda != nil && (cpuVariant != "" || runtime.GOARCH != "amd64") {
+	if gpuHandles.cuda != nil && (cpuVariant != "" || runtime.GOARCH != "amd64") && (variantGPU == "default" || variantGPU == "nvidia") {
 		C.cuda_check_vram(*gpuHandles.cuda, &memInfo)
 		if memInfo.err != nil {
 			slog.Info(fmt.Sprintf("error looking up CUDA GPU memory: %s", C.GoString(memInfo.err)))
